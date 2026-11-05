@@ -1,0 +1,4 @@
+# The lifecycle harness runs in Node, not in GNOME Shell.
+env:
+  es2022: true
+  node: true
