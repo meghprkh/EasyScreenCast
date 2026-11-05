@@ -46,8 +46,6 @@ class Capture extends Signals.EventEmitter {
         this._destroyed = false;
         this._mouseDown = false;
 
-        this.monitor = Main.layoutManager.focusMonitor;
-
         this._areaSelection = new St.Widget({
             name: 'area-selection',
             style_class: 'area-selection',
@@ -184,7 +182,6 @@ class Capture extends Signals.EventEmitter {
         this._areaSelection = null;
         this._areaResolution.destroy();
         this._areaResolution = null;
-        this.monitor = null;
 
         this.emit('stop');
         this.disconnectAll();
@@ -196,10 +193,6 @@ class Capture extends Signals.EventEmitter {
         Ext.Indicator.saveSelectedRect(x, y, h, w);
         Ext.Indicator._doDelayAction();
     }
-
-    toString() {
-        return this.GTypeName;
-    }
 }
 
 /**
@@ -207,8 +200,9 @@ class Capture extends Signals.EventEmitter {
  * (highlight rectangle, modal grab and captured-event signal) and the alert
  * label telling the user what to do.
  *
- * The teardown is split in two: destroy() releases the shared objects exactly
- * once, and the subclasses release the fields they own in _releaseFields().
+ * The subclasses initialise the fields they own in _initFields(), which runs
+ * before the capture is created, and release them in _releaseFields(), which
+ * runs once from destroy().
  */
 class SelectionBase extends Signals.EventEmitter {
     /**
@@ -221,6 +215,7 @@ class SelectionBase extends Signals.EventEmitter {
 
         this._destroyed = false;
         this._kind = kind;
+        this._initFields();
         this._capture = new Capture();
         this._signalCaptureEvent = this._capture.connect(
             'captured-event',
@@ -270,6 +265,16 @@ class SelectionBase extends Signals.EventEmitter {
     }
 
     /**
+     * Initialises the fields owned by the subclass; called once from the
+     * constructor, before the capture is created.
+     *
+     * @private
+     */
+    _initFields() {
+        // the base selection owns no other field
+    }
+
+    /**
      * Releases the fields owned by the subclass; called once from destroy().
      *
      * @private
@@ -282,7 +287,12 @@ class SelectionBase extends Signals.EventEmitter {
 class SelectionArea extends SelectionBase {
     constructor() {
         super('area', _('Select an area for recording or press [ESC] to abort'));
+    }
 
+    /**
+     * @private
+     */
+    _initFields() {
         this._mouseDown = false;
         this._startX = 0;
         this._startY = 0;
@@ -331,16 +341,17 @@ class SelectionArea extends SelectionBase {
             }
         }
     }
-
-    toString() {
-        return this.GTypeName;
-    }
 }
 
 class SelectionWindow extends SelectionBase {
     constructor() {
         super('window', _('Select a window for recording or press [ESC] to abort'));
+    }
 
+    /**
+     * @private
+     */
+    _initFields() {
         this._selectedWindow = null;
         this._windows = global.get_window_actors();
     }
@@ -425,10 +436,6 @@ class SelectionWindow extends SelectionBase {
         Lib.TalkativeLog('-£-window highlight off');
         this._capture.clearSelection();
     }
-
-    toString() {
-        return this.GTypeName;
-    }
 }
 
 class SelectionDesktop extends SelectionBase {
@@ -475,10 +482,6 @@ class SelectionDesktop extends SelectionBase {
             }
         }
     }
-
-    toString() {
-        return this.GTypeName;
-    }
 }
 
 const AreaRecording = GObject.registerClass({
@@ -488,6 +491,7 @@ const AreaRecording = GObject.registerClass({
         Lib.TalkativeLog('-£-area recording init');
 
         this._destroyed = false;
+        this._visible = false;
         // The recording-area indicator is drawn as a hollow frame made of four
         // thin edge strips (top/bottom/left/right) rather than a single widget
         // covering the whole recorded rectangle. A single widget would swallow
