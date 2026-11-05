@@ -319,11 +319,15 @@ class SelectionArea extends SelectionBase {
             } else if (type === Clutter.EventType.BUTTON_RELEASE) {
                 Lib.TalkativeLog(`-£-area x: ${rect.x} y: ${rect.y} height: ${rect.h} width: ${rect.w}`);
 
-                // the settings write has to happen before the teardown, as it
-                // nulls the capture it goes through
-                this._capture._saveRect(rect.x, rect.y, rect.h, rect.w);
-
-                this.destroy();
+                try {
+                    // the settings write has to happen before the teardown, as
+                    // it nulls the capture it goes through
+                    this._capture._saveRect(rect.x, rect.y, rect.h, rect.w);
+                } finally {
+                    // release the rectangle, the alert and the modal grab even
+                    // if the settings write or the recording start failed
+                    this.destroy();
+                }
             }
         }
     }
@@ -391,11 +395,15 @@ class SelectionWindow extends SelectionBase {
 
                 Lib.TalkativeLog(`-£-windows post wx: ${wx} wy: ${wy} height: ${h} width: ${w}`);
 
-                // the settings write has to happen before the teardown, as it
-                // nulls the capture it goes through
-                this._capture._saveRect(wx, wy, h, w);
-
-                this.destroy();
+                try {
+                    // the settings write has to happen before the teardown, as
+                    // it nulls the capture it goes through
+                    this._capture._saveRect(wx, wy, h, w);
+                } finally {
+                    // release the highlight, the alert and the modal grab even
+                    // if the settings write or the recording start failed
+                    this.destroy();
+                }
             }
         }
     }
@@ -456,11 +464,15 @@ class SelectionDesktop extends SelectionBase {
             let width = tmpM.width;
             Lib.TalkativeLog(`-£-desktop x: ${x} y: ${y} height: ${height} width: ${width}`);
 
-            // the settings write has to happen before the teardown, as it
-            // nulls the capture it goes through
-            this._capture._saveRect(x, y, height, width);
-
-            this.destroy();
+            try {
+                // the settings write has to happen before the teardown, as it
+                // nulls the capture it goes through
+                this._capture._saveRect(x, y, height, width);
+            } finally {
+                // release the rectangle, the alert and the modal grab even if
+                // the settings write or the recording start failed
+                this.destroy();
+            }
         }
     }
 
