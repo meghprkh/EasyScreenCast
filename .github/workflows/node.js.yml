@@ -27,6 +27,7 @@ jobs:
 
     - run: npm ci
     - run: npm run lint
+    - run: npm test
 
     - name: Build the extension zip
       run: make zip-file

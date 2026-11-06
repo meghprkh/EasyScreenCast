@@ -170,7 +170,7 @@ export const CaptureVideo = GObject.registerClass({
                         // draw area recording
                         if (Ext.Indicator.getSettings().getOption('b', Settings.SHOW_AREA_REC_SETTING_KEY)) {
                             // never leave a previous area frame behind
-                            this.AreaSelected?.destroy();
+                            this._releaseAreaRecording();
                             this.AreaSelected = new Selection.AreaRecording();
                         }
 
@@ -190,6 +190,23 @@ export const CaptureVideo = GObject.registerClass({
     }
 
     /**
+     * Clears the area-recording frame and releases the actors and signal
+     * handlers it created, if one is shown.
+     *
+     * @private
+     */
+    _releaseAreaRecording() {
+        if (this.AreaSelected === null)
+            return;
+
+        if (this.AreaSelected.isVisible())
+            this.AreaSelected.clearArea();
+
+        this.AreaSelected.destroy();
+        this.AreaSelected = null;
+    }
+
+    /**
      * Stop recording
      *
      * @param {*} callback called after recording is stopped and the video file is available
@@ -201,6 +218,9 @@ export const CaptureVideo = GObject.registerClass({
         this._screenCastService.StopScreencastRemote((result, error) => {
             if (error) {
                 Lib.TalkativeLog(`-&-ERROR(screencast stop) - ${error.message}`);
+
+                // release the frame even though the recording failed to stop
+                this._releaseAreaRecording();
                 return false;
             } else {
                 Lib.TalkativeLog(`-&-screencast stop - ${result[0]}`);
@@ -213,14 +233,7 @@ export const CaptureVideo = GObject.registerClass({
                 sourceFile.move(destFile, 0, null, null);
             }
 
-            // clear area recording and release the actors it created
-            if (this.AreaSelected !== null) {
-                if (this.AreaSelected.isVisible())
-                    this.AreaSelected.clearArea();
-
-                this.AreaSelected.destroy();
-                this.AreaSelected = null;
-            }
+            this._releaseAreaRecording();
 
             if (callback)
                 callback();
